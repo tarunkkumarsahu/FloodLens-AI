@@ -44,7 +44,7 @@ section{scroll-margin-top:72px}
 .disclaimer i{margin-right:8px;color:var(--red)}
 
 /* ========== NAVBAR ========== */
-.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(5,5,5,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:background .3s}
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(5,5,5,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:background .3s}
 .navbar.scrolled{background:rgba(5,5,5,.97);box-shadow:0 4px 30px rgba(0,0,0,.5)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:var(--maxw);margin:0 auto;padding:0 24px}
 .nav-brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.15rem}
@@ -151,7 +151,7 @@ section{scroll-margin-top:72px}
 .filter-btn:hover,.filter-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(0,191,255,.08)}
 .map-wrap{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
 #floodMap{height:500px;width:100%;background:var(--card)}
-.map-legend{position:absolute;bottom:20px;right:20px;z-index:500;background:rgba(11,11,11,.95);border:1px solid var(--border);border-radius:10px;padding:14px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.map-legend{position:absolute;bottom:20px;right:20px;z-index:500;background:rgba(11,11,11,.95);border:1px solid var(--border);border-radius:10px;padding:14px;backdrop-filter:blur(10px)}
 .map-legend h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:.82rem;margin-bottom:6px}
 .legend-dot{width:12px;height:12px;border-radius:50%}
@@ -192,7 +192,8 @@ section{scroll-margin-top:72px}
 .result-safety{background:var(--bg2);border-radius:10px;padding:16px}
 .result-safety h4{font-size:.9rem;margin-bottom:10px}
 .result-safety li{font-size:.85rem;color:var(--muted);padding:4px 0 4px 22px;position:relative}
-.result-safety li::before{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;left:0;color:var(--green);content:'\f071';color:var(--orange)}
+.result-safety li::before{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;left:0;color:var(--green)}
+.result-safety li::before{content:'\f071';color:var(--orange)}
 .assess-history{margin-top:24px}
 .assess-history h4{font-size:.9rem;color:var(--muted);margin-bottom:12px}
 .history-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-size:.85rem}
@@ -239,7 +240,7 @@ section{scroll-margin-top:72px}
 /* ========== GALLERY ========== */
 .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
 .gallery-item{position:relative;border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;border:1px solid var(--border);cursor:pointer;transition:all .3s}
-.gallery-item img{width:100%;height:100%;-o-object-fit:cover;object-fit:cover;transition:transform .5s ease}
+.gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
 .gallery-item:hover{border-color:var(--blue);box-shadow:0 10px 40px rgba(0,191,255,.12)}
 .gallery-item:hover img{transform:scale(1.08)}
 .gallery-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(5,5,5,.9) 100%);display:flex;flex-direction:column;justify-content:flex-end;padding:16px}
@@ -306,6 +307,23 @@ table.data-table{width:100%;border-collapse:collapse;min-width:600px}
   .result-vals{grid-template-columns:1fr}
 }
 </style>
+
+<style id="fl-modal-styles">
+.fl-modal-backdrop{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.82);backdrop-filter:blur(8px)}
+.fl-modal-backdrop.is-open{display:flex}
+.fl-modal{width:min(760px,100%);max-height:88vh;overflow:auto;background:var(--card-bg,#15191f);color:var(--text,#e8f2f8);border:1px solid rgba(0,191,255,.32);border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.58)}
+.fl-modal-header{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 21px;background:var(--card-bg,#15191f);border-bottom:1px solid rgba(255,255,255,.09)}
+.fl-modal-title{margin:0;font:600 19px 'Space Grotesk',sans-serif}
+.fl-modal-close{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.05);color:inherit;font-size:23px;cursor:pointer}
+.fl-modal-close:hover{border-color:#00bfff;color:#00d5ff}
+.fl-modal-body{padding:21px;line-height:1.65}
+.fl-modal-image{display:block;width:100%;max-height:65vh;object-fit:contain;border-radius:12px;background:#080b0f}
+.fl-modal-caption{margin:13px 0 0;color:var(--text-muted,#b8b8b8)}
+.gallery-item{cursor:zoom-in}
+.gallery-item:focus-visible,.fl-modal-close:focus-visible{outline:2px solid #00bfff;outline-offset:3px}
+@media(max-width:600px){.fl-modal-backdrop{padding:10px}.fl-modal{max-height:92vh}.fl-modal-header{padding:14px 16px}.fl-modal-body{padding:15px}}
+</style>
+  <link rel="stylesheet" href="features.css">
 </head>
 <body>
 
@@ -576,14 +594,14 @@ table.data-table{width:100%;border-collapse:collapse;min-width:600px}
     <p class="section-sub fade-up">Overview of data sources and dataset status used in this demonstration project.</p>
     <div class="data-table-wrap fade-up">
       <table class="data-table">
-        <thead><tr><th>Dataset Name</th><th>Category</th><th>Source</th><th>Update Status</th><th>Missing Data</th></tr></thead>
+        <thead><tr><th>Dataset Name</th><th>Category</th><th>Source</th><th>Update Status</th><th>Missing Data</th><th>Details</th></tr></thead>
         <tbody>
-          <tr><td>Rainfall Records</td><td>Rainfall data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td></tr>
-          <tr><td>River Water Levels</td><td>Water-level data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td></tr>
-          <tr><td>Flood Depth Estimates</td><td>Flood-depth data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-pending">Partial</span></td></tr>
-          <tr><td>Elevation Models</td><td>Elevation data</td><td>SRTM (public, demo)</td><td><span class="status-badge status-pending"><i class="fa-solid fa-clock"></i> Pending</span></td><td><span class="status-badge status-pending">Partial</span></td></tr>
-          <tr><td>Terrain & GIS Layers</td><td>Terrain/GIS data</td><td>OpenStreetMap (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td></tr>
-          <tr><td>Live Sensor Feed</td><td>Real-time data</td><td>Not connected</td><td><span class="status-badge status-missing"><i class="fa-solid fa-circle-xmark"></i> Unavailable</span></td><td><span class="status-badge status-missing">All</span></td></tr>
+          <tr><td>Rainfall Records</td><td>Rainfall data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td><td><button type="button" data-fl-dataset="0" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
+          <tr><td>River Water Levels</td><td>Water-level data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td><td><button type="button" data-fl-dataset="1" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
+          <tr><td>Flood Depth Estimates</td><td>Flood-depth data</td><td>Sample dataset (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-pending">Partial</span></td><td><button type="button" data-fl-dataset="2" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
+          <tr><td>Elevation Models</td><td>Elevation data</td><td>SRTM (public, demo)</td><td><span class="status-badge status-pending"><i class="fa-solid fa-clock"></i> Pending</span></td><td><span class="status-badge status-pending">Partial</span></td><td><button type="button" data-fl-dataset="3" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
+          <tr><td>Terrain & GIS Layers</td><td>Terrain/GIS data</td><td>OpenStreetMap (demo)</td><td><span class="status-badge status-ok"><i class="fa-solid fa-circle-check"></i> Current</span></td><td><span class="status-badge status-ok">None</span></td><td><button type="button" data-fl-dataset="4" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
+          <tr><td>Live Sensor Feed</td><td>Real-time data</td><td>Not connected</td><td><span class="status-badge status-missing"><i class="fa-solid fa-circle-xmark"></i> Unavailable</span></td><td><span class="status-badge status-missing">All</span></td><td><button type="button" data-fl-dataset="5" style="padding:5px 9px;border:1px solid rgba(0,191,255,.45);border-radius:6px;background:transparent;color:var(--cyan);cursor:pointer">Details</button></td></tr>
         </tbody>
       </table>
     </div>
@@ -596,6 +614,7 @@ table.data-table{width:100%;border-collapse:collapse;min-width:600px}
   <div class="container">
     <h2 class="section-title fade-up">About the <span class="gradient-text">Project</span></h2>
     <p class="section-sub fade-up">Understanding the purpose, workflow, and scope of this demonstration project.</p>
+    <button type="button" data-fl-project style="margin:0 0 22px;padding:9px 13px;border:1px solid rgba(0,191,255,.55);border-radius:8px;background:rgba(0,191,255,.1);color:var(--cyan);font-weight:700;cursor:pointer"><i class="fa-solid fa-circle-info"></i> Project Information</button>
     <div class="about-grid">
       <div class="about-text fade-up">
         <p>This project demonstrates how AI, environmental data, and GIS technology can be combined to assess flood risk and support early warning systems for disaster management. By analysing parameters such as rainfall, river water levels, terrain elevation, and flood depth, the system can categorise areas into different risk levels and visualise them on an interactive map.</p>
@@ -791,6 +810,7 @@ function addMarker(loc){
       </div>
       <div style="font-size:.8rem;color:#666;margin-top:8px;border-top:1px solid #eee;padding-top:8px">${loc.desc}</div>
       <div style="font-size:.72rem;color:#999;margin-top:6px">Sample demonstration location</div>
+      <button type="button" data-fl-location="${demoLocations.indexOf(loc)}" style="margin-top:10px;padding:7px 11px;border:0;border-radius:7px;background:#00bfff;color:#06121a;font-weight:700;cursor:pointer">View location details</button>
     </div>
   `);
   m.locationData=loc;
@@ -926,7 +946,9 @@ function showResult(data,r){
       <ul>${recs.map(r=>`<li>${r}</li>`).join('')}</ul>
     </div>
     <div class="disclaimer" style="margin-top:14px"><i class="fa-solid fa-circle-exclamation"></i> This is a rule-based demonstration assessment, not a trained AI prediction or an official flood warning.</div>
+    <button type="button" data-fl-prediction style="margin-top:14px;padding:9px 13px;border:1px solid rgba(0,191,255,.55);border-radius:8px;background:rgba(0,191,255,.1);color:var(--cyan);font-weight:700;cursor:pointer">View prediction details</button>
   `;
+  window.lastFloodAssessment={data:{...data},result:{...r}};
 }
 function updateDashboardRisk(r){
   const pill=document.getElementById('dashRiskPill');
@@ -981,7 +1003,7 @@ function renderAlerts(filter){
         <div class="alert-head"><h4>${a.title}</h4><span class="alert-pulse"></span><span class="risk-pill risk-${a.level==='vhigh'?'vhigh':a.level}">${levelLabel} Risk</span><span class="alert-sim-tag"><i class="fa-solid fa-flask"></i> Simulated</span></div>
         <div class="alert-meta"><i class="fa-solid fa-location-dot"></i> ${a.location} · <i class="fa-regular fa-clock"></i> ${a.time}</div>
         <p>${a.desc}</p>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="alert-action"><i class="fa-solid fa-shield" style="margin-right:4px;color:var(--blue)"></i> ${a.action}</span></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="alert-action"><i class="fa-solid fa-shield" style="margin-right:4px;color:var(--blue)"></i> ${a.action}</span><button type="button" data-fl-alert="${a.id}" style="padding:6px 10px;border:1px solid rgba(0,191,255,.5);border-radius:7px;background:transparent;color:var(--cyan);font-size:.78rem;cursor:pointer">View details</button></div>
       </div>
       <button class="alert-dismiss" data-dismiss="${a.id}" aria-label="Dismiss alert"><i class="fa-solid fa-xmark"></i></button>
     </div>`;
@@ -1074,5 +1096,127 @@ function chartOpts(isBar){
 /* Init charts after load */
 window.addEventListener('load',initCharts);
 </script>
+
+<div class="fl-modal-backdrop" id="fl-modal-root" role="dialog" aria-modal="true" aria-labelledby="fl-modal-title">
+ <div class="fl-modal">
+  <div class="fl-modal-header"><h3 class="fl-modal-title" id="fl-modal-title">FloodLens AI</h3><button class="fl-modal-close" id="fl-modal-close" type="button" aria-label="Close dialog">&times;</button></div>
+  <div class="fl-modal-body" id="fl-modal-body"></div>
+ </div>
+</div>
+
+<script id="fl-modal-system">
+(function(){
+ const root=document.getElementById('fl-modal-root'),title=document.getElementById('fl-modal-title'),body=document.getElementById('fl-modal-body'),close=document.getElementById('fl-modal-close');
+ if(!root||!title||!body||!close)return;
+ let previousFocus=null;
+ function openModal(heading,content){
+  previousFocus=document.activeElement;title.textContent=heading;body.replaceChildren();
+  if(content instanceof Node)body.appendChild(content);else body.textContent=String(content??'');
+  root.classList.add('is-open');document.body.style.overflow='hidden';close.focus();
+ }
+ function closeModal(){
+  root.classList.remove('is-open');document.body.style.overflow='';body.replaceChildren();
+  if(previousFocus&&typeof previousFocus.focus==='function')previousFocus.focus();
+ }
+ close.addEventListener('click',closeModal);
+ root.addEventListener('click',event=>{if(event.target===root)closeModal();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&root.classList.contains('is-open'))closeModal();});
+ function showGalleryImage(card){
+  const image=card.querySelector('img');if(!image||!image.getAttribute('src'))return;
+  const content=document.createElement('div');
+  const preview=document.createElement('img');preview.className='fl-modal-image';preview.src=image.currentSrc||image.src;preview.alt=image.alt||'FloodLens gallery image';
+  const caption=document.createElement('p');caption.className='fl-modal-caption';caption.textContent=card.querySelector('.gallery-overlay p')?.textContent||image.alt||'';
+  content.append(preview,caption);openModal('Image Preview',content);
+ }
+ document.addEventListener('click',event=>{const card=event.target.closest('.gallery-item');if(card)showGalleryImage(card);});
+ document.addEventListener('keydown',event=>{
+  const card=event.target.closest?.('.gallery-item');if(card&&(event.key==='Enter'||event.key===' ')){event.preventDefault();showGalleryImage(card);}
+ });
+ const gallery=document.getElementById('galleryGrid');
+ if(gallery){new MutationObserver(()=>gallery.querySelectorAll('.gallery-item').forEach(card=>{card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Preview image: '+(card.querySelector('img')?.alt||'FloodLens gallery image'));})).observe(gallery,{childList:true});}
+ window.FloodLensModal={open:openModal,close:closeModal};
+})();
+</script>
+<script id="fl-detail-modal-actions">
+(function(){
+ const api=window.FloodLensModal;
+ if(!api)return;
+ const datasetDetails=[
+  {name:'Rainfall Records',category:'Rainfall data',source:'Sample dataset (demo)',status:'Current',coverage:'Demonstration values only',note:'No live weather provider or rain gauge is connected.'},
+  {name:'River Water Levels',category:'Water-level data',source:'Sample dataset (demo)',status:'Current',coverage:'Demonstration values only',note:'Values are illustrative and are not verified measurements from a river authority.'},
+  {name:'Flood Depth Estimates',category:'Flood-depth data',source:'Sample dataset (demo)',status:'Partial',coverage:'Selected demonstration locations',note:'Depth values are illustrative, not survey-grade or operational flood-depth products.'},
+  {name:'Elevation Models',category:'Elevation data',source:'SRTM (public, demo reference)',status:'Pending',coverage:'Not connected to this interface',note:'No elevation raster is queried by the current website.'},
+  {name:'Terrain & GIS Layers',category:'Terrain/GIS data',source:'OpenStreetMap basemap',status:'Current',coverage:'Map tile display',note:'The basemap is provided by OpenStreetMap; overlay risk markers are demonstration records.'},
+  {name:'Live Sensor Feed',category:'Real-time data',source:'Not connected',status:'Unavailable',coverage:'None',note:'There is no live sensor ingestion configured in this demonstration.'}
+ ];
+ function panel(rows,note){
+  const wrap=document.createElement('div');
+  const intro=document.createElement('p');intro.textContent=note;intro.style.margin='0 0 16px';wrap.appendChild(intro);
+  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px';
+  rows.forEach(function(pair){
+   const card=document.createElement('div');card.style.cssText='padding:11px 13px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.035)';
+   const key=document.createElement('div');key.textContent=pair[0];key.style.cssText='font-size:.72rem;color:#8fa3b2;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em';
+   const value=document.createElement('div');value.textContent=String(pair[1]??'Not available');value.style.cssText='font-weight:600;overflow-wrap:anywhere';
+   card.append(key,value);grid.appendChild(card);
+  });
+  wrap.appendChild(grid);return wrap;
+ }
+ function riskName(value){return ({low:'Low',moderate:'Moderate',high:'High',vhigh:'Very High'})[value]||value||'Unknown';}
+ function showLocation(index){
+  const loc=demoLocations[Number(index)];if(!loc)return;
+  api.open('Location Details',panel([
+   ['Location',loc.name],['Coordinates',loc.lat.toFixed(4)+', '+loc.lng.toFixed(4)],
+   ['Risk level',riskName(loc.risk)],['Risk score',loc.riskScore+'/100'],
+   ['Rainfall',loc.rainfall+' mm'],['Water level',loc.waterLevel+' m'],['Flood depth',loc.floodDepth+' m']
+  ],loc.desc+' These are sample demonstration values, not live verified measurements.'));
+ }
+ function showAlert(id){
+  const alert=demoAlerts.find(function(item){return String(item.id)===String(id);});if(!alert)return;
+  api.open('Alert Details',panel([
+   ['Alert',alert.title],['Location',alert.location],['Severity',riskName(alert.level)],
+   ['Recorded time',alert.time],['Recommended action',alert.action],['Source status','Simulated demonstration']
+  ],alert.desc+' This is a simulated alert, not an official government warning or emergency notification.'));
+ }
+ function showPrediction(){
+  const latest=window.lastFloodAssessment;
+  if(!latest){api.open('Prediction Details','Run a flood risk assessment first. The current calculator uses demonstration rule-based logic.');return;}
+  const d=latest.data,r=latest.result;
+  api.open('Prediction Details',panel([
+   ['Location',d.location],['Risk category',r.label],['Risk score',r.score+'/100'],
+   ['Rainfall',d.rainfall+' mm'],['Temperature',d.temp+' °C'],['Humidity',d.humidity+'%'],
+   ['River level',d.river+' m'],['Flood depth',d.floodDepth+' m'],['Elevation',d.elevation+' m'],
+   ['Method','Rule-based demonstration']
+  ],'This score is calculated from the submitted parameters using thresholds. It is not a trained AI prediction or an official flood warning.'));
+ }
+ function showDataset(index){
+  const item=datasetDetails[Number(index)];if(!item)return;
+  api.open('Data Details',panel([
+   ['Dataset',item.name],['Category',item.category],['Source',item.source],
+   ['Status',item.status],['Coverage',item.coverage]
+  ],item.note));
+ }
+ function showProject(){
+  api.open('Project Information',panel([
+   ['Project','AI-Based Flood Prediction & Risk Mapping System'],
+   ['Team','SOLVIX (SY501)'],['Institution','MIT ADT University'],
+   ['Core areas','Flood risk assessment, GIS mapping, analytics and early warning concepts'],
+   ['Current assessment','Rule-based demonstration calculator'],
+   ['Data status','Sample data; live sensors and verified alerts are not connected']
+  ],'This academic demonstration explores how environmental parameters and GIS can support flood-risk awareness. It must not be used as a substitute for official warnings or emergency services.'));
+ }
+ document.addEventListener('click',function(event){
+  const trigger=event.target.closest('[data-fl-location],[data-fl-alert],[data-fl-prediction],[data-fl-dataset],[data-fl-project]');
+  if(!trigger)return;
+  if(trigger.hasAttribute('data-fl-location'))showLocation(trigger.getAttribute('data-fl-location'));
+  else if(trigger.hasAttribute('data-fl-alert'))showAlert(trigger.getAttribute('data-fl-alert'));
+  else if(trigger.hasAttribute('data-fl-prediction'))showPrediction();
+  else if(trigger.hasAttribute('data-fl-dataset'))showDataset(trigger.getAttribute('data-fl-dataset'));
+  else if(trigger.hasAttribute('data-fl-project'))showProject();
+ });
+})();
+</script>
+
+  <script src="backend-config.js"></script>
+  <script src="features.js"></script>
 </body>
 </html>
