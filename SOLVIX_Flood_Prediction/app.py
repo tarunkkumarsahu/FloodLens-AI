@@ -504,19 +504,24 @@ def create_citizen_report():
     report_code = "FLR-" + datetime.utcnow().strftime("%Y%m%d%H%M%S") + "-" + os.urandom(3).hex().upper()
     created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
+    connection = None
     try:
-        with get_reports_db() as connection:
-            connection.execute(
-                """
-                INSERT INTO citizen_reports
-                    (report_code, location, incident_type, severity, description, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (report_code, location, incident_type, severity, description, created_at),
-            )
+        connection = get_reports_db()
+        connection.execute(
+            """
+            INSERT INTO citizen_reports
+                (report_code, location, incident_type, severity, description, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (report_code, location, incident_type, severity, description, created_at),
+        )
+        connection.commit()
     except sqlite3.Error:
         app.logger.exception("Could not save citizen flood report")
         return jsonify({"error": "Report storage is temporarily unavailable."}), 503
+    finally:
+        if connection is not None:
+            connection.close()
 
     return jsonify({
         "report_id": report_code,
@@ -609,4 +614,4 @@ if __name__ == "__main__":
     print(f"  Risk assessment: {'rule-based + ML' if ML_AVAILABLE else 'rule-based only'}")
     print("  Starting server at: http://127.0.0.1:5000")
     print("=" * 60)
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", host="0.0.0.0", port=int(os.environ.get("PORT", "5000")) )
