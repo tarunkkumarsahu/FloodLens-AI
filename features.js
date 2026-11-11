@@ -119,17 +119,30 @@
   const submit=el('button','Save report on this device','fl-feature-btn');submit.type='submit';
   grid.append(field('Incident type',type),field('Severity observed',severity),field('Location',location),field('Contact (optional)',contact));
   f.append(grid,field('Observation details',description),submit);const result=el('div');
-  f.addEventListener('submit',e=>{
-   e.preventDefault();const report={id:'FLR-'+Date.now(),location:location.value.trim(),type:type.value,severity:severity.value,contact:contact.value.trim(),description:description.value.trim(),createdAt:new Date().toISOString(),status:'Saved locally'};
+  f.addEventListener('submit',async e=>{
+   e.preventDefault();submit.disabled=true;submit.textContent='Saving…';
+   const report={id:'FLR-'+Date.now(),location:location.value.trim(),type:type.value,severity:severity.value,contact:contact.value.trim(),description:description.value.trim(),createdAt:new Date().toISOString(),status:'Saved locally'};
+   let savedMessage='';
    try{
-    const reports=JSON.parse(localStorage.getItem('floodLensCitizenReports')||'[]');reports.unshift(report);localStorage.setItem('floodLensCitizenReports',JSON.stringify(reports.slice(0,100)));result.replaceChildren();
-    const success=el('div',null,'fl-result-item');success.append(el('strong','Report saved: '+report.id),el('small','Saved in this browser only. It has not been sent to a government agency, emergency service or monitoring team.'));
+    const apiBase=window.FLOODLENS_API_BASE||'';
+    if(apiBase){
+     const response=await fetch(apiBase+'/api/reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:report.location,type:report.type,severity:report.severity,description:report.description})});
+     const payload=await response.json();if(!response.ok)throw new Error(payload.error||'Backend could not save the report.');
+     report.id=payload.report_id||report.id;report.createdAt=payload.created_at||report.createdAt;report.status='Received by configured backend';
+     savedMessage='Saved by the connected FloodLens backend. It has not been verified or forwarded to emergency services.';
+    }else{
+     const reports=JSON.parse(localStorage.getItem('floodLensCitizenReports')||'[]');reports.unshift(report);localStorage.setItem('floodLensCitizenReports',JSON.stringify(reports.slice(0,100)));
+     savedMessage='Saved in this browser only. It has not been transmitted to a server, government agency or emergency service.';
+    }
+    result.replaceChildren();const success=el('div',null,'fl-result-item');
+    success.append(el('strong','Report saved: '+report.id),el('small',savedMessage));
     const download=el('button','Download report JSON','fl-feature-btn');download.type='button';download.style.marginTop='10px';download.addEventListener('click',()=>{
      const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=report.id+'.json';a.click();URL.revokeObjectURL(url);
     });result.append(success,download);f.reset();
-   }catch(error){result.replaceChildren(note('Unable to save this report in local browser storage.'));}
+   }catch(error){result.replaceChildren(note(error.message||'Unable to save this report.'));}
+   finally{submit.disabled=false;submit.textContent='Save flood report';}
   });
-  wrap.append(f,result,note('Prototype privacy note: reports remain in this browser’s local storage and are not transmitted. Do not enter sensitive personal information. This is not an emergency-reporting channel.'));
+  wrap.append(f,result,note('Privacy note: contact details, if entered, remain local to this browser and are not sent to the backend. Reports are observations, not verified incidents. This is not an emergency-reporting channel.'));
   modal.open('Citizen Flood Reporting',wrap);
  }
  function openNotifications(){
