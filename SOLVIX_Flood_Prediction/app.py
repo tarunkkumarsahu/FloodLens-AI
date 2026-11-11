@@ -533,9 +533,10 @@ def create_citizen_report():
 
 @app.route("/api/chat", methods=["POST", "OPTIONS"])
 def flood_safety_chat():
-    """Generate a flood-safety response using the OpenAI Responses API.
+    """Generate a flood-safety response using the Gemini Developer API.
 
-    Requires OPENAI_API_KEY to be configured on the backend host.
+    Configure GEMINI_API_KEY on the backend host. The key is never exposed
+    to the browser or returned in API responses.
     """
     if request.method == "OPTIONS":
         return ("", 204)
@@ -545,39 +546,51 @@ def flood_safety_chat():
     if not message or len(message) > 500:
         return jsonify({"error": "Message is required and must be 500 characters or fewer."}), 400
 
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return jsonify({
-            "error": "AI assistant is not configured on the backend.",
+            "error": "Gemini assistant is not configured on the backend.",
             "fallback_available": True,
         }), 503
 
-    model = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
+    if not model or len(model) > 100:
+        return jsonify({"error": "Gemini model configuration is invalid."}), 500
+
+    system_instruction = (
+        "You are FloodLens, a concise flood-preparedness information assistant. "
+        "Prioritize life safety. Never claim to dispatch responders, issue official warnings, "
+        "or know live local conditions unless provided in the conversation. For immediate danger, "
+        "tell the person to contact their local emergency number and disaster-management authority. "
+        "Advise people never to walk or drive through floodwater. Direct users to official local "
+        "authorities for evacuation instructions and verified shelter locations. Clearly distinguish "
+        "general guidance from verified live data. Do not invent phone numbers, shelters, road closures, "
+        "or flood levels. Keep answers practical and calm."
+    )
+
     payload = {
-        "model": model,
-        "instructions": (
-            "You are FloodLens, a concise flood-preparedness information assistant. "
-            "Prioritize life safety. Never claim to dispatch responders, issue official warnings, "
-            "or know live local conditions unless provided in the conversation. For immediate danger, "
-            "tell the person to contact their local emergency number and disaster-management authority. "
-            "Advise people never to walk or drive through floodwater. Direct users to official local "
-            "authorities for evacuation instructions and verified shelter locations. Clearly distinguish "
-            "general guidance from verified live data. Do not invent phone numbers, shelters, road closures, "
-            "or flood levels. Keep answers practical and calm."
-        ),
-        "input": [
-            {
-                "role": "user",
-                "content": [{"type": "input_text", "text": message}],
-            }
-        ],
-        "max_output_tokens": 450,
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        },
+        "contents": [{
+            "role": "user",
+            "parts": [{"text": message}]
+        }],
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 450
+        }
     }
+    endpoint = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        + urllib.parse.quote(model, safe="-._")
+        + ":generateContent"
+    )
     req = urllib.request.Request(
-        "https://api.openai.com/v1/responses",
+        endpoint,
         data=json.dumps(payload).encode("utf-8"),
         headers={
-            "Authorization": "Bearer " + api_key,
+            "x-goog-api-key": api_key,
             "Content-Type": "application/json",
         },
         method="POST",
@@ -586,23 +599,35 @@ def flood_safety_chat():
     try:
         with urllib.request.urlopen(req, timeout=25) as response:
             result = json.loads(response.read().decode("utf-8"))
-        text_parts = []
-        for output_item in result.get("output", []):
-            if output_item.get("type") == "message":
-                for content_item in output_item.get("content", []):
-                    if content_item.get("type") == "output_text":
-                        text_parts.append(content_item.get("text", ""))
-        reply = "\n".join(part for part in text_parts if part).strip()
-        if not reply:
-            return jsonify({"error": "The assistant returned an empty response."}), 502
-        return jsonify({"reply": reply, "model": model, "demo": False})
-    except urllib.error.HTTPError as error:
-        app.logger.warning("OpenAI API returned HTTP %s", error.code)
-        return jsonify({"error": "The AI service could not complete the request."}), 502
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-        app.logger.exception("FloodLens AI assistant request failed")
-        return jsonify({"error": "The AI service is temporarily unavailable."}), 503
 
+        candidates = result.get("candidates") or []
+        if not candidates:
+            return jsonify({
+                "error": "Gemini did not return a response. Please rephrase and try again."
+            }), 502
+
+        parts = candidates[0].get("content", {}).get("parts", [])
+        reply = "\n".join(
+            part.get("text", "")
+            for part in parts
+            if isinstance(part, dict) and part.get("text")
+        ).strip()
+
+        if not reply:
+            return jsonify({"error": "Gemini returned an empty or blocked response."}), 502
+
+        return jsonify({"reply": reply, "model": model, "provider": "gemini", "demo": False})
+
+    except urllib.error.HTTPError as error:
+        app.logger.warning("Gemini API returned HTTP %s", error.code)
+        if error.code == 429:
+            return jsonify({"error": "Gemini rate limit reached. Please try again shortly."}), 429
+        if error.code in (401, 403):
+            return jsonify({"error": "Gemini API authentication failed. Check the backend GEMINI_API_KEY."}), 502
+        return jsonify({"error": "Gemini could not complete the request."}), 502
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        app.logger.exception("FloodLens Gemini request failed")
+        return jsonify({"error": "Gemini is temporarily unavailable. Please try again."}), 503
 
 
 if __name__ == "__main__":
