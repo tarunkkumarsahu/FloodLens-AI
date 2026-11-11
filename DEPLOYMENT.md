@@ -24,8 +24,8 @@ Deploy the `SOLVIX_Flood_Prediction` directory as a separate web service.
 
 Configure these environment variables on the backend host:
 
-- `OPENAI_API_KEY`: your server-side OpenAI API key (required for model-powered chatbot replies).
-- `OPENAI_MODEL`: optional; defaults to `gpt-5.5`.
+- `GEMINI_API_KEY`: your server-side Gemini API key (required for model-powered chatbot replies).
+- `GEMINI_MODEL`: optional; defaults to `gemini-3.8-flash`.
 - `FRONTEND_ORIGINS`: comma-separated exact origins allowed to call the API, for example the Vercel production URL and the feature preview URL.
 - `FLOODLENS_DB_PATH`: path on a persistent disk for the SQLite report database, for example `/var/data/floodlens_reports.sqlite3`.
 
@@ -37,7 +37,7 @@ After the backend is deployed, edit `backend-config.js` and set:
 window.FLOODLENS_API_BASE = 'https://YOUR-BACKEND-HOST';
 ```
 
-Commit that change to this feature branch. The chatbot will then use `POST /api/chat`, and citizen reports will use `POST /api/reports`.
+Commit that change to this feature branch. The chatbot will then use `POST /api/chat` through the Gemini API, and citizen reports will use `POST /api/reports`.
 
 ## Current feature behavior and limitations
 
@@ -46,7 +46,7 @@ Commit that change to this feature branch. The chatbot will then use `POST /api/
 - Citizen reports are stored in the browser when no backend URL is configured. With a backend URL, the Flask API stores observations in SQLite. Reports are not automatically sent to emergency services or treated as verified.
 - The Notification Centre shows the site's existing sample alerts, which are simulated.
 - Historical Flood Analysis compares sample location records; it is not a verified historical time series.
-- The assistant offers local safety guidance when no backend is configured. Model-powered responses require `OPENAI_API_KEY` on the Flask host.
+- The assistant offers local safety guidance when no backend is configured. Model-powered responses require `GEMINI_API_KEY` on the Flask host.
 
 ## Validation
 
