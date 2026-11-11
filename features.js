@@ -2,8 +2,7 @@
 (function(){
  'use strict';
  const modal=window.FloodLensModal;if(!modal)return;
- const toolsMarkup=\
- <section class="section-pad" id="tools" style="background:var(--bg2)">
+ const toolsMarkup=` <section class="section-pad" id="tools" style="background:var(--bg2)">
   <div class="container">
    <h2 class="section-title fade-up">Flood Response <span class="gradient-text">Tools</span></h2>
    <p class="section-sub fade-up">Weather lookups, route planning, community reports, notifications and historical demonstration data.</p>
@@ -17,7 +16,7 @@
    <p class="fl-form-note" style="margin-top:18px"><i class="fa-solid fa-circle-info"></i> Route results are not flood-aware, shelter listings may be incomplete, and sample alerts or historical values are not official operational information.</p>
   </div>
  </section>
- ;
+`;
  const gallery=document.getElementById('gallery');if(gallery&&!document.getElementById('tools'))gallery.insertAdjacentHTML('beforebegin',toolsMarkup);
  const nav=document.getElementById('navLinks');
  if(nav&&!nav.querySelector('a[href="#tools"]')){
@@ -25,14 +24,13 @@
   const galleryLink=nav.querySelector('a[href="#gallery"]')?.parentElement;
   if(galleryLink)nav.insertBefore(li,galleryLink);else nav.appendChild(li);
  }
- const chatMarkup=\
- <button class="fl-chat-launch" id="flChatLaunch" type="button" aria-label="Open FloodLens safety assistant"><i class="fa-solid fa-comment-dots"></i></button>
+ const chatMarkup=` <button class="fl-chat-launch" id="flChatLaunch" type="button" aria-label="Open FloodLens safety assistant"><i class="fa-solid fa-comment-dots"></i></button>
  <aside class="fl-chat-panel" id="flChatPanel" aria-label="FloodLens safety assistant" aria-live="polite">
   <div class="fl-chat-head"><div><strong><i class="fa-solid fa-shield-halved" style="color:#00d5ff"></i> FloodLens Assistant</strong><small>Safety-guidance prototype · not an official alert service</small></div><button class="fl-chat-close" id="flChatClose" type="button" aria-label="Close assistant">&times;</button></div>
   <div class="fl-chat-messages" id="flChatMessages"><div class="fl-chat-message bot">Hi! I can help with basic flood preparedness and safety guidance. I do not receive live emergency alerts. What would you like to know?</div></div>
   <form class="fl-chat-compose" id="flChatForm"><input class="fl-chat-input" id="flChatInput" autocomplete="off" maxlength="500" placeholder="Ask about flood safety…" aria-label="Message"><button class="fl-chat-send" type="submit" aria-label="Send message"><i class="fa-solid fa-paper-plane"></i></button></form>
  </aside>
- ;
+`;
  document.body.insertAdjacentHTML('beforeend',chatMarkup);
  function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=String(text);if(cls)n.className=cls;return n;}
  function field(labelText,control){const w=el('div',null,'fl-form-field'),l=el('label',labelText);l.htmlFor=control.id;w.append(l,control);return w;}
