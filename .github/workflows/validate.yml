@@ -1,0 +1,37 @@
+name: Validate FloodLens AI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/modals-chatbot
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Validate feature JavaScript syntax
+        run: node --check features.js
+      - name: Build Vite frontend
+        run: npm run build
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Flask backend syntax
+        run: python -m py_compile SOLVIX_Flood_Prediction/app.py
