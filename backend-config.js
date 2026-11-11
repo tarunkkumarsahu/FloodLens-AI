@@ -1,5 +1,4 @@
-/* Set this to the deployed Flask API origin after the backend is hosted.
- * Example: window.FLOODLENS_API_BASE = 'https://your-backend.example.com';
- * Keep this file free of API keys or other secrets.
+/* Set the deployed Flask API origin.
+ * Keep API keys and other secrets out of this frontend file.
  */
-window.FLOODLENS_API_BASE = window.FLOODLENS_API_BASE || '';
+window.FLOODLENS_API_BASE = 'https://flood-lens-ai-jqmh.vercel.app';
