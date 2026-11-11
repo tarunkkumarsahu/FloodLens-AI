@@ -13,6 +13,9 @@ data is provided, but the web demo uses the rule-based approach.
 
 import os
 import json
+import sqlite3
+import urllib.request
+import urllib.error
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 
@@ -412,6 +415,189 @@ def predict():
         return jsonify({"error": f"Invalid input: {str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+
+
+# ---------------------------------------------------------------------------
+# Citizen reporting and AI safety assistant
+# ---------------------------------------------------------------------------
+def get_reports_db():
+    """Return a SQLite connection for citizen reports.
+
+    Set FLOODLENS_DB_PATH to a persistent disk path in production. The default
+    path is suitable for local development; ephemeral serverless filesystems
+    may not retain data across deployments or cold starts.
+    """
+    default_dir = os.path.join(os.path.dirname(__file__), "instance")
+    os.makedirs(default_dir, exist_ok=True)
+    db_path = os.environ.get(
+        "FLOODLENS_DB_PATH",
+        os.path.join(default_dir, "floodlens_reports.sqlite3"),
+    )
+    connection = sqlite3.connect(db_path, timeout=10)
+    connection.row_factory = sqlite3.Row
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS citizen_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_code TEXT NOT NULL UNIQUE,
+            location TEXT NOT NULL,
+            incident_type TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            description TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    connection.commit()
+    return connection
+
+
+@app.after_request
+def add_api_cors_headers(response):
+    """Allow the configured Vercel frontend to call this Flask API."""
+    origin = request.headers.get("Origin")
+    allowed_origins = [
+        value.strip()
+        for value in os.environ.get("FRONTEND_ORIGINS", "").split(",")
+        if value.strip()
+    ]
+    if origin and (not allowed_origins or origin in allowed_origins):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+
+@app.route("/api/reports", methods=["POST", "OPTIONS"])
+def create_citizen_report():
+    """Store a validated citizen flood observation.
+
+    Reports are observations, not verified emergency alerts. Contact details
+    are intentionally not collected or stored by this API.
+    """
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    data = request.get_json(silent=True) or {}
+    location = str(data.get("location", "")).strip()
+    incident_type = str(data.get("type", "")).strip()
+    severity = str(data.get("severity", "")).strip()
+    description = str(data.get("description", "")).strip()
+
+    allowed_types = {
+        "waterlogging", "river_overflow", "urban_flooding",
+        "drain_blockage", "road_inundation", "other",
+    }
+    allowed_severities = {"low", "moderate", "high", "very_high"}
+
+    if not location or len(location) > 200:
+        return jsonify({"error": "Location is required and must be 200 characters or fewer."}), 400
+    if incident_type not in allowed_types:
+        return jsonify({"error": "Choose a valid incident type."}), 400
+    if severity not in allowed_severities:
+        return jsonify({"error": "Choose a valid severity."}), 400
+    if not description or len(description) > 800:
+        return jsonify({"error": "Description is required and must be 800 characters or fewer."}), 400
+
+    report_code = "FLR-" + datetime.utcnow().strftime("%Y%m%d%H%M%S") + "-" + os.urandom(3).hex().upper()
+    created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+    try:
+        with get_reports_db() as connection:
+            connection.execute(
+                """
+                INSERT INTO citizen_reports
+                    (report_code, location, incident_type, severity, description, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (report_code, location, incident_type, severity, description, created_at),
+            )
+    except sqlite3.Error:
+        app.logger.exception("Could not save citizen flood report")
+        return jsonify({"error": "Report storage is temporarily unavailable."}), 503
+
+    return jsonify({
+        "report_id": report_code,
+        "created_at": created_at,
+        "status": "received_by_demo_backend",
+        "message": "The observation was saved. It has not been verified or forwarded to emergency services.",
+    }), 201
+
+
+@app.route("/api/chat", methods=["POST", "OPTIONS"])
+def flood_safety_chat():
+    """Generate a flood-safety response using the OpenAI Responses API.
+
+    Requires OPENAI_API_KEY to be configured on the backend host.
+    """
+    if request.method == "OPTIONS":
+        return ("", 204)
+
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message", "")).strip()
+    if not message or len(message) > 500:
+        return jsonify({"error": "Message is required and must be 500 characters or fewer."}), 400
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return jsonify({
+            "error": "AI assistant is not configured on the backend.",
+            "fallback_available": True,
+        }), 503
+
+    model = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+    payload = {
+        "model": model,
+        "instructions": (
+            "You are FloodLens, a concise flood-preparedness information assistant. "
+            "Prioritize life safety. Never claim to dispatch responders, issue official warnings, "
+            "or know live local conditions unless provided in the conversation. For immediate danger, "
+            "tell the person to contact their local emergency number and disaster-management authority. "
+            "Advise people never to walk or drive through floodwater. Direct users to official local "
+            "authorities for evacuation instructions and verified shelter locations. Clearly distinguish "
+            "general guidance from verified live data. Do not invent phone numbers, shelters, road closures, "
+            "or flood levels. Keep answers practical and calm."
+        ),
+        "input": [
+            {
+                "role": "user",
+                "content": [{"type": "input_text", "text": message}],
+            }
+        ],
+        "max_output_tokens": 450,
+    }
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": "Bearer " + api_key,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=25) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        text_parts = []
+        for output_item in result.get("output", []):
+            if output_item.get("type") == "message":
+                for content_item in output_item.get("content", []):
+                    if content_item.get("type") == "output_text":
+                        text_parts.append(content_item.get("text", ""))
+        reply = "\n".join(part for part in text_parts if part).strip()
+        if not reply:
+            return jsonify({"error": "The assistant returned an empty response."}), 502
+        return jsonify({"reply": reply, "model": model, "demo": False})
+    except urllib.error.HTTPError as error:
+        app.logger.warning("OpenAI API returned HTTP %s", error.code)
+        return jsonify({"error": "The AI service could not complete the request."}), 502
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        app.logger.exception("FloodLens AI assistant request failed")
+        return jsonify({"error": "The AI service is temporarily unavailable."}), 503
+
 
 
 if __name__ == "__main__":
