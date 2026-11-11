@@ -1,0 +1,44 @@
+/* FloodLens AI feature additions — preserve the existing dark/cyan visual language */
+#tools .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:26px}
+#tools .feature-card{background:var(--card-bg,#111);border:1px solid var(--border,rgba(255,255,255,.09));border-radius:14px;padding:20px;display:flex;flex-direction:column;min-height:205px;transition:transform .2s,border-color .2s}
+#tools .feature-card:hover{transform:translateY(-3px);border-color:rgba(0,191,255,.45)}
+#tools .feature-icon{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:rgba(0,191,255,.12);color:var(--cyan,#00d5ff);font-size:1.15rem;margin-bottom:14px}
+#tools .feature-card h3{font-size:1rem;margin:0 0 8px;color:var(--white,#fff)}
+#tools .feature-card p{font-size:.84rem;line-height:1.55;color:var(--muted,#aaa);margin:0 0 18px;flex:1}
+.fl-feature-btn{align-self:flex-start;border:1px solid rgba(0,191,255,.45);border-radius:8px;padding:8px 12px;background:rgba(0,191,255,.08);color:var(--cyan,#00d5ff);font:600 .82rem Inter,sans-serif;cursor:pointer}
+.fl-feature-btn:hover{background:rgba(0,191,255,.16);border-color:var(--cyan,#00d5ff)}
+.fl-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fl-form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.fl-form-field label{font-size:.8rem;color:var(--muted,#aaa);font-weight:600}
+.fl-form-field input,.fl-form-field select,.fl-form-field textarea,.fl-chat-input{width:100%;padding:11px 12px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:#0c1117;color:#edf7fc;font:inherit;outline:none}
+.fl-form-field input:focus,.fl-form-field select:focus,.fl-form-field textarea:focus,.fl-chat-input:focus{border-color:#00bfff;box-shadow:0 0 0 2px rgba(0,191,255,.12)}
+.fl-form-field textarea{min-height:90px;resize:vertical}
+.fl-form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.fl-form-note{font-size:.78rem;line-height:1.5;color:#9baab5;margin-top:12px}
+.fl-result-list{display:grid;gap:10px;margin-top:14px}
+.fl-result-item{padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.025)}
+.fl-result-item strong{color:#eef8fc}
+.fl-result-item small{display:block;color:#91a4b1;margin-top:4px;line-height:1.5}
+.fl-weather-current{display:flex;align-items:center;gap:16px;padding:16px;border-radius:12px;background:rgba(0,191,255,.08);border:1px solid rgba(0,191,255,.18);margin:12px 0}
+.fl-weather-temp{font-size:2.2rem;font-weight:700;color:#e9faff}
+.fl-weather-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.fl-weather-day{padding:11px 8px;text-align:center;border:1px solid rgba(255,255,255,.1);border-radius:9px}
+.fl-weather-day strong,.fl-weather-day small{display:block}
+.fl-weather-day small{color:#95a8b4;margin-top:5px;font-size:.72rem}
+.fl-history-bar{height:9px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:7px}
+.fl-history-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00bfff,#00e5ff)}
+.fl-chat-launch{position:fixed;right:22px;bottom:22px;z-index:9000;width:58px;height:58px;border:0;border-radius:50%;background:linear-gradient(135deg,#00bfff,#007da8);color:#031018;font-size:1.35rem;box-shadow:0 8px 28px rgba(0,191,255,.28);cursor:pointer}
+.fl-chat-panel{position:fixed;right:22px;bottom:92px;z-index:9000;width:min(370px,calc(100vw - 28px));height:min(560px,calc(100vh - 125px));display:none;flex-direction:column;overflow:hidden;border:1px solid rgba(0,191,255,.3);border-radius:16px;background:#10161d;box-shadow:0 18px 55px rgba(0,0,0,.55);color:#eaf5fa}
+.fl-chat-panel.is-open{display:flex}
+.fl-chat-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#151e27;border-bottom:1px solid rgba(255,255,255,.09)}
+.fl-chat-head strong{display:block}.fl-chat-head small{color:#91a4b1;font-size:.72rem}
+.fl-chat-close{border:0;background:transparent;color:#dceaf2;font-size:1.3rem;cursor:pointer}
+.fl-chat-messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.fl-chat-message{max-width:90%;padding:10px 12px;border-radius:12px;font-size:.84rem;line-height:1.55;white-space:pre-wrap}
+.fl-chat-message.bot{align-self:flex-start;background:#1b2934;border:1px solid rgba(255,255,255,.07)}
+.fl-chat-message.user{align-self:flex-end;background:#064d67;color:#effcff}
+.fl-chat-compose{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.09)}
+.fl-chat-send{width:42px;flex:0 0 42px;border:0;border-radius:8px;background:#00bfff;color:#04131b;cursor:pointer;font-size:1rem}
+.fl-chat-input{min-width:0}
+@media(max-width:850px){#tools .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){#tools .feature-grid{grid-template-columns:1fr}.fl-form-grid{grid-template-columns:1fr}.fl-weather-days{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-chat-launch{right:14px;bottom:14px}.fl-chat-panel{right:14px;bottom:82px}}
