@@ -1,10 +1,9 @@
 /*
  * Public Supabase browser configuration.
- * Fill these with your Supabase Project URL and Publishable key.
- * The Publishable/anon key is designed to be exposed in the browser.
+ * The publishable key is intended for browser use.
  * NEVER put a service_role or secret key in this file.
  */
-window.FLOODLENS_AUTH_CONFIG = window.FLOODLENS_AUTH_CONFIG || {
-  supabaseUrl: "",
-  publishableKey: ""
+window.FLOODLENS_AUTH_CONFIG = {
+  supabaseUrl: "https://ymcjfwfyelyzbwtklxmr.supabase.com",
+  publishableKey: "sb_publishable_d_oH4I8ArN0HIMpAEX62tQ_RX-d8kHf"
 };
