@@ -450,6 +450,13 @@ def get_reports_db():
         )
         """
     )
+    # Upgrade databases created before account-backed reports were introduced.
+    existing_columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(citizen_reports)").fetchall()
+    }
+    if "user_id" not in existing_columns:
+        connection.execute("ALTER TABLE citizen_reports ADD COLUMN user_id TEXT")
     connection.commit()
     return connection
 
@@ -467,11 +474,57 @@ def add_api_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return response
 
 
-@app.route("/api/reports", methods=["POST", "OPTIONS"])
+
+def get_supabase_user_from_request():
+    """Validate a Supabase access token using Supabase Auth's user endpoint."""
+    supabase_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    publishable_key = (
+        os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+        or os.environ.get("SUPABASE_ANON_KEY", "").strip()
+    )
+    if not supabase_url or not publishable_key:
+        return None, (
+            jsonify({"error": "Supabase authentication is not configured on the backend."}),
+            503,
+        )
+
+    authorization = request.headers.get("Authorization", "")
+    scheme, _, access_token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not access_token.strip():
+        return None, (jsonify({"error": "Sign in is required to submit a report."}), 401)
+
+    user_request = urllib.request.Request(
+        supabase_url + "/auth/v1/user",
+        headers={
+            "apikey": publishable_key,
+            "Authorization": "Bearer " + access_token.strip(),
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(user_request, timeout=8) as response:
+            user = json.loads(response.read().decode("utf-8"))
+        user_id = str(user.get("id", "")).strip()
+        if not user_id:
+            return None, (jsonify({"error": "Supabase did not return a valid user."}), 401)
+        return {"id": user_id, "email": user.get("email")}, None
+    except urllib.error.HTTPError as error:
+        if error.code in (400, 401, 403):
+            return None, (jsonify({"error": "Your sign-in session is invalid or expired. Please sign in again."}), 401)
+        app.logger.warning("Supabase user verification returned HTTP %s", error.code)
+        return None, (jsonify({"error": "Authentication service is temporarily unavailable."}), 502)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        app.logger.exception("Could not verify the Supabase access token")
+        return None, (jsonify({"error": "Could not verify your sign-in right now. Try again."}), 502)
+
+
+
+@app.route("/api/reports", methods=["GET", "POST", "OPTIONS"])
 def create_citizen_report():
     """Store a validated citizen flood observation.
 
@@ -480,6 +533,32 @@ def create_citizen_report():
     """
     if request.method == "OPTIONS":
         return ("", 204)
+
+    authenticated_user, auth_error = get_supabase_user_from_request()
+    if auth_error:
+        return auth_error
+
+    if request.method == "GET":
+        connection = None
+        try:
+            connection = get_reports_db()
+            rows = connection.execute(
+                """
+                SELECT report_code, location, incident_type, severity, description, created_at
+                FROM citizen_reports
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 100
+                """,
+                (authenticated_user["id"],),
+            ).fetchall()
+            return jsonify({"reports": [dict(row) for row in rows], "count": len(rows)})
+        except sqlite3.Error:
+            app.logger.exception("Could not read citizen flood reports")
+            return jsonify({"error": "Report storage is temporarily unavailable."}), 503
+        finally:
+            if connection is not None:
+                connection.close()
 
     data = request.get_json(silent=True) or {}
     location = str(data.get("location", "")).strip()
@@ -511,10 +590,13 @@ def create_citizen_report():
         connection.execute(
             """
             INSERT INTO citizen_reports
-                (report_code, location, incident_type, severity, description, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (report_code, location, incident_type, severity, description, created_at, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (report_code, location, incident_type, severity, description, created_at),
+            (
+                report_code, location, incident_type, severity, description,
+                created_at, authenticated_user["id"],
+            ),
         )
         connection.commit()
     except sqlite3.Error:
