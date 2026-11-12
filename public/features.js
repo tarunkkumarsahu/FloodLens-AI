@@ -9,7 +9,7 @@
    <div class="feature-grid">
     <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-cloud-sun-rain"></i></div><h3>Weather Forecast</h3><p>Look up current conditions and a five-day forecast for a city using Open-Meteo weather data.</p><button class="fl-feature-btn" type="button" data-fl-tool="weather">Check weather <i class="fa-solid fa-arrow-right"></i></button></article>
     <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-route"></i></div><h3>Route & Shelter Finder</h3><p>Get a road-route estimate and look for mapped emergency shelters near your destination.</p><button class="fl-feature-btn" type="button" data-fl-tool="route">Find route & shelters <i class="fa-solid fa-arrow-right"></i></button></article>
-    <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-house-circle-exclamation"></i></div><h3>Citizen Flood Reporting</h3><p>Record a flood or waterlogging observation. This prototype stores submissions in this browser only.</p><button class="fl-feature-btn" type="button" data-fl-tool="report">Submit a report <i class="fa-solid fa-arrow-right"></i></button></article>
+    <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-house-circle-exclamation"></i></div><h3>Citizen Flood Reporting</h3><p>Sign in to submit and track your flood or waterlogging observations.</p><button class="fl-feature-btn" type="button" data-fl-tool="report">Submit a report <i class="fa-solid fa-arrow-right"></i></button></article>
     <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-bell"></i></div><h3>Notification Centre</h3><p>Review the website's sample alerts in one place and distinguish simulated notices from official warnings.</p><button class="fl-feature-btn" type="button" data-fl-tool="notifications">Open notifications <i class="fa-solid fa-arrow-right"></i></button></article>
     <article class="feature-card"><div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div><h3>Historical Flood Analysis</h3><p>Compare the demonstration locations by sample risk score and inspect the limitations of the dataset.</p><button class="fl-feature-btn" type="button" data-fl-tool="history">Explore analysis <i class="fa-solid fa-arrow-right"></i></button></article>
    </div>
@@ -209,13 +209,14 @@
   modal.open('Route & Shelter Finder',wrap);
  }
  function openReport(){
+  if(!window.FloodLensAuth || !window.FloodLensAuth.requireSignIn('Sign in or create a FloodLens account before submitting a report.'))return;
   const wrap=el('div'),f=form(),grid=el('div',null,'fl-form-grid');
   const location=input('flReportLocation','Area, street or landmark');location.required=true;
   const type=select('flReportType',[['waterlogging','Waterlogging'],['river_overflow','River overflow'],['urban_flooding','Urban flooding'],['drain_blockage','Blocked drain'],['road_inundation','Road inundation'],['other','Other']]);
   const severity=select('flReportSeverity',[['low','Low'],['moderate','Moderate'],['high','High'],['very_high','Very high']]);
   const contact=input('flReportContact','Optional contact detail');
   const description=el('textarea');description.id='flReportDescription';description.name='description';description.placeholder='Describe what you observed (max 800 characters)…';description.maxLength=800;description.required=true;
-  const submit=el('button','Save report on this device','fl-feature-btn');submit.type='submit';
+  const submit=el('button','Submit flood report','fl-feature-btn');submit.type='submit';
   grid.append(field('Incident type',type),field('Severity observed',severity),field('Location',location),field('Contact (optional)',contact));
   f.append(grid,field('Observation details',description),submit);const result=el('div');
   f.addEventListener('submit',async e=>{
@@ -225,7 +226,9 @@
    try{
     const apiBase=window.FLOODLENS_API_BASE||'';
     if(apiBase){
-     const response=await fetch(apiBase+'/api/reports',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:report.location,type:report.type,severity:report.severity,description:report.description})});
+     const accessToken=window.FloodLensAuth?.getAccessToken();
+      if(!accessToken)throw new Error('Your sign-in session has expired. Please sign in again.');
+      const response=await fetch(apiBase+'/api/reports',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},body:JSON.stringify({location:report.location,type:report.type,severity:report.severity,description:report.description})});
      const payload=await response.json();if(!response.ok)throw new Error(payload.error||'Backend could not save the report.');
      report.id=payload.report_id||report.id;report.createdAt=payload.created_at||report.createdAt;report.status='Received by configured backend';
      savedMessage='Saved by the connected FloodLens backend. It has not been verified or forwarded to emergency services.';
@@ -239,7 +242,7 @@
      const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=report.id+'.json';a.click();URL.revokeObjectURL(url);
     });result.append(success,download);f.reset();
    }catch(error){result.replaceChildren(note(error.message||'Unable to save this report.'));}
-   finally{submit.disabled=false;submit.textContent='Save flood report';}
+   finally{submit.disabled=false;submit.textContent='Submit flood report';}
   });
   wrap.append(f,result,note('Privacy note: contact details, if entered, remain local to this browser and are not sent to the backend. Reports are observations, not verified incidents. This is not an emergency-reporting channel.'));
   modal.open('Citizen Flood Reporting',wrap);
