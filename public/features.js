@@ -24,6 +24,105 @@
   const galleryLink=nav.querySelector('a[href="#gallery"]')?.parentElement;
   if(galleryLink)nav.insertBefore(li,galleryLink);else nav.appendChild(li);
  }
+ // Notification bell + a proper dropdown feed with persistent read/unread state.
+ const notificationAlerts=(typeof demoAlerts!=='undefined'&&Array.isArray(demoAlerts))?demoAlerts:[];
+ const notificationReadKey='floodLensReadNotifications';
+ let notificationReadIds=new Set();
+ let notificationFilter='all';
+ try{notificationReadIds=new Set(JSON.parse(localStorage.getItem(notificationReadKey)||'[]').map(String));}catch(_error){}
+ const navInner=document.querySelector('.nav-inner');
+ const navToggle=document.getElementById('navToggle');
+ let notificationButton=document.getElementById('flNotificationButton');
+ if(navInner&&!notificationButton){
+  notificationButton=document.createElement('button');
+  notificationButton.type='button';notificationButton.id='flNotificationButton';notificationButton.className='fl-notify-trigger';
+  notificationButton.setAttribute('aria-label','Open notifications');notificationButton.setAttribute('aria-expanded','false');
+  notificationButton.innerHTML='<i class="fa-solid fa-bell" aria-hidden="true"></i><span class="fl-notify-badge" id="flNotifyBadge" aria-label="Unread notifications"></span>';
+  if(navToggle)navInner.insertBefore(notificationButton,navToggle);else navInner.appendChild(notificationButton);
+ }
+ const notificationPanel=document.createElement('section');
+ notificationPanel.className='fl-notify-panel';notificationPanel.id='flNotificationPanel';notificationPanel.setAttribute('aria-label','Notifications');
+ notificationPanel.innerHTML=`
+  <header class="fl-notify-header">
+   <div><div class="fl-notify-title">Notifications <span id="flNotifyTotal">0</span></div><small>FloodLens alert centre</small></div>
+   <button type="button" class="fl-notify-close" aria-label="Close notifications">&times;</button>
+  </header>
+  <div class="fl-notify-toolbar">
+   <div class="fl-notify-tabs" role="group" aria-label="Filter notifications">
+    <button type="button" class="is-active" data-notify-filter="all">All</button>
+    <button type="button" data-notify-filter="unread">Unread</button>
+   </div>
+   <button type="button" class="fl-notify-mark-all">Mark all as read</button>
+  </div>
+  <div class="fl-notify-list" id="flNotifyList"></div>
+  <footer class="fl-notify-footer"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Sample alerts only. Not live government warnings or emergency notifications.</footer>
+ `;
+ document.body.appendChild(notificationPanel);
+ const notificationList=notificationPanel.querySelector('#flNotifyList');
+ function notificationId(alert,index){return String(alert.id??index);}
+ function saveReadNotifications(){try{localStorage.setItem(notificationReadKey,JSON.stringify(Array.from(notificationReadIds)));}catch(_error){}}
+ function unreadNotificationCount(){return notificationAlerts.filter((alert,index)=>!notificationReadIds.has(notificationId(alert,index))).length;}
+ function updateNotificationBadge(){
+  const count=unreadNotificationCount(),badge=notificationButton?.querySelector('#flNotifyBadge');
+  if(badge){badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;}
+  notificationButton?.setAttribute('aria-label',count?('Open notifications, '+count+' unread'):'Open notifications');
+  const total=notificationPanel.querySelector('#flNotifyTotal');if(total)total.textContent=String(count);
+  const markAll=notificationPanel.querySelector('.fl-notify-mark-all');if(markAll)markAll.disabled=count===0;
+ }
+ function renderNotifications(){
+  notificationList.replaceChildren();
+  const visible=notificationAlerts.map((alert,index)=>({alert,id:notificationId(alert,index),unread:!notificationReadIds.has(notificationId(alert,index))}))
+   .filter(item=>notificationFilter==='all'||item.unread);
+  if(!visible.length){
+   const empty=document.createElement('div');empty.className='fl-notify-empty';
+   const icon=document.createElement('i');icon.className='fa-regular fa-bell-slash';
+   const title=document.createElement('strong');title.textContent=notificationFilter==='unread'?'You are all caught up':'No notifications available';
+   const copy=document.createElement('p');copy.textContent=notificationFilter==='unread'?'There are no unread sample alerts.':'There are no alert records to show.';
+   empty.append(icon,title,copy);notificationList.appendChild(empty);
+  }else{
+   visible.forEach(({alert,id,unread})=>{
+    const level=String(alert.level||'info').toLowerCase();
+    const item=document.createElement('button');item.type='button';item.className='fl-notify-item '+(unread?'is-unread':'is-read');item.dataset.notifyId=id;
+    const marker=document.createElement('span');marker.className='fl-notify-severity '+(level==='vhigh'?'is-vhigh':level==='high'?'is-high':level==='moderate'?'is-moderate':'is-low');marker.setAttribute('aria-hidden','true');
+    const body=document.createElement('span');body.className='fl-notify-item-body';
+    const meta=document.createElement('span');meta.className='fl-notify-item-meta';
+    const levelLabel=document.createElement('span');levelLabel.className='fl-notify-level';levelLabel.textContent=level.replace(/[_-]/g,' ').toUpperCase()+' RISK';
+    const sample=document.createElement('span');sample.className='fl-notify-sample';sample.textContent='SIMULATED';
+    meta.append(levelLabel,sample);
+    if(unread){const newLabel=document.createElement('span');newLabel.className='fl-notify-new';newLabel.textContent='NEW';meta.appendChild(newLabel);}
+    const title=document.createElement('strong');title.textContent=alert.title||'Flood risk notification';
+    const location=document.createElement('span');location.className='fl-notify-location';location.textContent=alert.location||'Location unavailable';
+    const description=document.createElement('span');description.className='fl-notify-description';description.textContent=alert.desc||'No additional details provided.';
+    const time=document.createElement('span');time.className='fl-notify-time';time.textContent=alert.time||'Sample timestamp unavailable';
+    body.append(meta,title,location,description,time);item.append(marker,body);notificationList.appendChild(item);
+   });
+  }
+  notificationPanel.querySelectorAll('[data-notify-filter]').forEach(button=>button.classList.toggle('is-active',button.dataset.notifyFilter===notificationFilter));
+  updateNotificationBadge();
+ }
+ function openNotificationPanel(force){
+  const shouldOpen=typeof force==='boolean'?force:!notificationPanel.classList.contains('is-open');
+  notificationPanel.classList.toggle('is-open',shouldOpen);notificationButton?.setAttribute('aria-expanded',String(shouldOpen));
+  if(shouldOpen)renderNotifications();
+ }
+ notificationButton?.addEventListener('click',()=>openNotificationPanel());
+ notificationPanel.querySelector('.fl-notify-close').addEventListener('click',()=>openNotificationPanel(false));
+ notificationPanel.querySelector('.fl-notify-mark-all').addEventListener('click',()=>{
+  notificationAlerts.forEach((alert,index)=>notificationReadIds.add(notificationId(alert,index)));
+  saveReadNotifications();renderNotifications();
+ });
+ notificationPanel.addEventListener('click',event=>{
+  const filterButton=event.target.closest('[data-notify-filter]');
+  if(filterButton){notificationFilter=filterButton.dataset.notifyFilter;renderNotifications();return;}
+  const item=event.target.closest('[data-notify-id]');
+  if(item){notificationReadIds.add(item.dataset.notifyId);saveReadNotifications();renderNotifications();}
+ });
+ document.addEventListener('click',event=>{
+  if(notificationPanel.classList.contains('is-open')&&!notificationPanel.contains(event.target)&&!notificationButton?.contains(event.target))openNotificationPanel(false);
+ });
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&notificationPanel.classList.contains('is-open'))openNotificationPanel(false);});
+ updateNotificationBadge();
+
  const chatMarkup=` <button class="fl-chat-launch" id="flChatLaunch" type="button" aria-label="Open FloodLens safety assistant"><i class="fa-solid fa-comment-dots"></i></button>
  <aside class="fl-chat-panel" id="flChatPanel" aria-label="FloodLens safety assistant" aria-live="polite">
   <div class="fl-chat-head"><div><strong><i class="fa-solid fa-shield-halved" style="color:#00d5ff"></i> FloodLens Assistant</strong><small>Safety-guidance prototype · not an official alert service</small></div><button class="fl-chat-close" id="flChatClose" type="button" aria-label="Close assistant">&times;</button></div>
@@ -145,13 +244,7 @@
   wrap.append(f,result,note('Privacy note: contact details, if entered, remain local to this browser and are not sent to the backend. Reports are observations, not verified incidents. This is not an emergency-reporting channel.'));
   modal.open('Citizen Flood Reporting',wrap);
  }
- function openNotifications(){
-  const wrap=el('div'),alerts=(typeof demoAlerts!=='undefined'?demoAlerts:[]);
-  if(!alerts.length){wrap.append(note('No notification records available.'));modal.open('Notification Centre',wrap);return;}
-  alerts.forEach(alert=>{const card=el('div',null,'fl-result-item');card.append(el('strong',alert.title+' · '+alert.location),el('small',alert.time+' · '+String(alert.level).toUpperCase()+' · SIMULATED'),el('p',alert.desc));wrap.appendChild(card);});
-  wrap.append(note('These are sample demonstration notifications, not official alerts and not delivered to emergency services.'));
-  modal.open('Notification Centre',wrap);
- }
+ function openNotifications(){openNotificationPanel(true);}
  function openHistory(){
   const wrap=el('div'),samples=(typeof demoLocations!=='undefined'?demoLocations:[]);
   if(!samples.length){wrap.append(note('Historical sample locations are not available.'));modal.open('Historical Flood Analysis',wrap);return;}
