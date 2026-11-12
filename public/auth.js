@@ -218,9 +218,9 @@
           showAccount();
           showStatus('Account created successfully.', 'success');
         } else {
-          showStatus('Account created. Check your email and confirm your address before signing in.', 'success');
           setMode('signin');
           $('#flAuthEmail').value = email;
+          showStatus('Account created. Check your email and confirm your address before signing in.', 'success');
         }
       } catch (error) {
         showStatus(error.message || 'Could not create the account. Try again.', 'error');
