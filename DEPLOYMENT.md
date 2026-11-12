@@ -56,3 +56,21 @@ GitHub Actions runs:
 - `python -m py_compile SOLVIX_Flood_Prediction/app.py`
 
 These checks verify syntax/build integrity; real API behavior still needs a deployed backend and manual test requests.
+
+
+## Supabase Authentication
+
+The frontend uses Supabase Auth for email/password signup, sign-in, email confirmation, password reset, persistent browser sessions, and sign-out.
+
+1. Create a Supabase project.
+2. In **Project Settings → API**, copy the Project URL and the **Publishable key** (or legacy anon key). Never use the service-role/secret key in the browser.
+3. Put the values in `public/auth-config.js`:
+   - `supabaseUrl`: Project URL
+   - `publishableKey`: Publishable key
+4. In Supabase **Authentication → URL Configuration**, set the Site URL to the production frontend URL and add the production frontend URL plus its preview URL to Redirect URLs.
+5. In the backend host environment, set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` to the same project URL and publishable key. These backend values are used to ask Supabase to validate the user's bearer access token before citizen reports can be created or read.
+6. Redeploy the frontend and backend after setting these values.
+
+The publishable/anon key is intended for browser use. A Supabase service-role or secret key must never be placed in frontend files or exposed to users. Email confirmation behavior is controlled in the Supabase Auth settings.
+
+Citizen report submissions require a signed-in account. The Flask API validates the bearer token with Supabase and scopes the report list to the authenticated user ID. The SQLite report store remains demo storage; on serverless/ephemeral hosts it is not durable across instance replacement. Use a persistent database for production report retention.
