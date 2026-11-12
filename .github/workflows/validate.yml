@@ -26,7 +26,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
       - name: Validate feature JavaScript syntax
-        run: node --check features.js
+        run: |
+          node --check features.js
+          node --check public/features.js
+          node --check public/auth.js
+          node --check public/auth-config.js
       - name: Build Vite frontend
         run: npm run build
       - name: Set up Python
