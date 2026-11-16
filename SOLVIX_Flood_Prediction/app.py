@@ -421,6 +421,49 @@ def predict():
 # ---------------------------------------------------------------------------
 # Citizen reporting and AI safety assistant
 # ---------------------------------------------------------------------------
+def get_supabase_user_from_request():
+    """Validate the caller's Supabase access token and return the authenticated user."""
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, access_token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not separator or not access_token.strip():
+        return None, (jsonify({"error": "Sign in is required to submit or view reports."}), 401)
+
+    supabase_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    publishable_key = (
+        os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+        or os.environ.get("SUPABASE_ANON_KEY", "").strip()
+    )
+    if not supabase_url or not publishable_key:
+        app.logger.error("Supabase Auth validation is missing backend configuration.")
+        return None, (jsonify({"error": "Supabase authentication is not configured on the backend."}), 503)
+
+    auth_request = urllib.request.Request(
+        supabase_url + "/auth/v1/user",
+        headers={
+            "apikey": publishable_key,
+            "Authorization": "Bearer " + access_token.strip(),
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(auth_request, timeout=12) as response:
+            user_data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", "replace")[:300]
+        if error.code in (400, 401, 403):
+            return None, (jsonify({"error": "Your sign-in session is invalid or expired. Please sign in again."}), 401)
+        app.logger.warning("Supabase Auth validation failed (%s): %s", error.code, detail)
+        return None, (jsonify({"error": "Could not validate your sign-in session. Please try again."}), 502)
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+        app.logger.exception("Supabase Auth validation request failed")
+        return None, (jsonify({"error": "Supabase authentication is temporarily unavailable."}), 503)
+
+    if not isinstance(user_data, dict) or not user_data.get("id"):
+        return None, (jsonify({"error": "Supabase did not return a valid user session. Please sign in again."}), 401)
+    return user_data, None
+
+
 def supabase_rest_request(path, access_token, method="GET", payload=None, prefer=None):
     """Call Supabase PostgREST as the authenticated user so RLS stays enforced."""
     supabase_url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
