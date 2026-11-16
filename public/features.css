@@ -137,3 +137,12 @@ body.fl-auth-lock{overflow:hidden}
 .fl-auth-signout{margin-top:22px}
 @media(max-width:920px){.fl-auth-trigger{margin-left:auto;margin-right:8px}}
 @media(max-width:560px){.fl-auth-trigger{min-height:35px;padding:7px 10px;font-size:.75rem}.fl-auth-body{padding:17px}.fl-auth-overlay{padding:10px}}
+
+
+/* High-visibility citizen flood reporting shortcuts */
+.nav-report-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;margin-left:10px;padding:9px 15px;border:1px solid rgba(0,214,255,.7);border-radius:9px;background:linear-gradient(135deg,#00bfff,#00d9e9);color:#03141c;font:700 .82rem Inter,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 5px 18px rgba(0,191,255,.2);transition:transform .2s,box-shadow .2s}
+.nav-report-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,191,255,.34)}
+.nav-report-btn:focus-visible,.hero-report-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.hero-report-btn{border:1px solid rgba(0,214,255,.85);cursor:pointer}
+@media(max-width:920px){.nav-report-btn{margin-left:auto;margin-right:8px}}
+@media(max-width:560px){.nav-report-btn{min-height:35px;padding:7px 9px;gap:5px;font-size:.7rem}.nav-report-btn i{font-size:.75rem}.hero-btns{gap:10px}.hero-btns>a,.hero-btns>button{width:100%;justify-content:center}}
