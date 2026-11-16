@@ -74,3 +74,12 @@ The frontend uses Supabase Auth for email/password signup, sign-in, email confir
 The publishable/anon key is intended for browser use. A Supabase service-role or secret key must never be placed in frontend files or exposed to users. Email confirmation behavior is controlled in the Supabase Auth settings.
 
 Citizen report submissions require a signed-in account. The Flask API validates the bearer token with Supabase and scopes the report list to the authenticated user ID. The SQLite report store remains demo storage; on serverless/ephemeral hosts it is not durable across instance replacement. Use a persistent database for production report retention.
+
+
+## Persistent Citizen Report Database
+
+Citizen reports are stored in Supabase Postgres using the authenticated user's access token and Row Level Security. The schema and RLS policies are in `supabase/migrations/20261116_citizen_reports.sql`.
+
+Run that SQL file once in **Supabase Dashboard → SQL Editor → New query**. The API uses the user's JWT for PostgREST requests; it does not use or expose a service-role key. Users can only insert and select rows where `user_id = auth.uid()`.
+
+Ensure the backend environment has `SUPABASE_URL` set to the project's `.supabase.co` API origin and `SUPABASE_PUBLISHABLE_KEY` set to the matching publishable key. Redeploy the Flask backend after changing environment variables.
