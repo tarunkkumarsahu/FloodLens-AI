@@ -229,7 +229,9 @@
      const accessToken=window.FloodLensAuth?.getAccessToken();
       if(!accessToken)throw new Error('Your sign-in session has expired. Please sign in again.');
       const response=await fetch(apiBase+'/api/reports',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},body:JSON.stringify({location:report.location,type:report.type,severity:report.severity,description:report.description})});
-     const payload=await response.json();if(!response.ok)throw new Error(payload.error||'Backend could not save the report.');
+     const responseText=await response.text();let payload={};
+     try{payload=responseText?JSON.parse(responseText):{};}catch(_parseError){throw new Error('Backend returned a non-JSON response (HTTP '+response.status+'). The report was not confirmed as saved; check the backend deployment.');}
+     if(!response.ok)throw new Error(payload.error||'Backend could not save the report.');
      report.id=payload.report_id||report.id;report.createdAt=payload.created_at||report.createdAt;report.status='Received by configured backend';
      savedMessage='Saved to your FloodLens account database. It has not been verified or forwarded to emergency services.';
     }else{
